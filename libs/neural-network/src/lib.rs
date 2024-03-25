@@ -1,64 +1,66 @@
 pub struct NeuralNetwork {
     depth: usize,
-    layers: Vec<String>,
+    layers: Vec<Layer>,
+}
+
+struct Layer {
+    size: usize,
+    neurons: Vec<Neuron>,
+}
+
+struct Neuron {
+    bias: f32,
+    output_weights: Vec<f32>,
 }
 
 impl NeuralNetwork {
-    fn new() -> Self {
+    fn new(depth: usize, layer_params: usize, ) -> Self {
         NeuralNetwork {
             depth: 0,
             layers: Vec::new(),
         }
     }
 
-    fn add_layer() {
-        // increase depth
-        // add a layer
-    }
-
-    fn propagate() {
-        todo!()
+    // why mut T (binding - pattern syntax) but not T: &mut (type) https://stackoverflow.com/questions/29672373/what-is-difference-between-mut-a-t-and-a-mut-t
+    // binding is local to the function
+    fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
+        // fold is good when you need to produce a single value from a collection
+        self.layers
+            .iter()
+            .fold(inputs, |acc,  layer| layer.propagate(acc))
     }
 }
 
-pub struct Layer {
-    neurons: Vec<Neuron>,
-}
-
-pub struct Neuron {
-    bias: f32,
-    output_weights: Vec<f32>,
+impl Layer {
+    fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
+        // better to avoid writing loops on your own, use iter and iter adaptor
+        // Read more: vec with capacity and iter
+        // Vec starts empty, with every push Vec is moved to another place with enough space => inefficient
+        self.neurons.iter().map(|neuron| neuron.propagate(&inputs)).collect()
+    }
 }
 
 impl Neuron {
-    fn new(bias: f32, synapse_count: usize) -> Self {
-        let mut output_weights: Vec<f32> = vec![];
-        
-        for i in 0..synapse_count { // todo: randomize output weight and improve loop
-            output_weights.push((i as f32) * 0.2);
-        }
-        
-        Neuron {
-            bias,
-            output_weights
-        }
+    fn propagate(&self, inputs: &[f32]) -> f32 {
+        assert_eq!(inputs.len(), self.output_weights.len());
+
+        // array[i] always perform a bounds check 
+        let mut output = inputs // iterator is lazy
+            .iter()
+            .zip(&self.output_weights)
+            .map(|(&input, &weight)| input * weight)
+            .sum::<f32>(); // ::<> turbofish - provides explicit generic args when compiler can't infer. https://techblog.tonsser.com/posts/what-is-rusts-turbofish
+
+        output += self.bias;
+
+        output.max(0.0)
     }
 }
 
+
+// node value = activation_func(input val * weight + bias)
+
 #[cfg(test)]
 mod tests {
-    use crate::{NeuralNetwork, Neuron};
 
-    #[test]
-    fn test_neural_network() {
-        let neural_net = NeuralNetwork::new();
-        assert_eq!(neural_net.depth, 0);
-        println!("i'm here {}", neural_net.depth);
-    }
-    
-    #[test]
-    fn test_neuron() {
-        let neuron = Neuron::new(0.3, 10);
-        println!("{:?}", neuron.output_weights);
-    }
 }
