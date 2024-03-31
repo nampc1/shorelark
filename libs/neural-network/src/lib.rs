@@ -1,10 +1,10 @@
+use rand::Rng;
+
 pub struct NeuralNetwork {
-    depth: usize,
     layers: Vec<Layer>,
 }
 
 struct Layer {
-    size: usize,
     neurons: Vec<Neuron>,
 }
 
@@ -13,11 +13,21 @@ struct Neuron {
     output_weights: Vec<f32>,
 }
 
+pub struct LayerTopology {
+    pub neurons: usize,
+}
+
 impl NeuralNetwork {
-    fn new(depth: usize, layer_params: usize, ) -> Self {
-        NeuralNetwork {
-            depth: 0,
-            layers: Vec::new(),
+    pub fn random(layers: &[LayerTopology]) -> Self {
+        assert!(layers.len() > 1);
+
+        let result_layers = layers
+            .windows(2)
+            .map(|layers| Layer::random(layers[0].neurons, layers[1].neurons))
+            .collect();
+
+        Self {
+            layers: result_layers,
         }
     }
 
@@ -27,7 +37,7 @@ impl NeuralNetwork {
         // fold is good when you need to produce a single value from a collection
         self.layers
             .iter()
-            .fold(inputs, |acc,  layer| layer.propagate(acc))
+            .fold(inputs, |acc, layer| layer.propagate(acc))
     }
 }
 
@@ -36,7 +46,18 @@ impl Layer {
         // better to avoid writing loops on your own, use iter and iter adaptor
         // Read more: vec with capacity and iter
         // Vec starts empty, with every push Vec is moved to another place with enough space => inefficient
-        self.neurons.iter().map(|neuron| neuron.propagate(&inputs)).collect()
+        self.neurons
+            .iter()
+            .map(|neuron| neuron.propagate(&inputs))
+            .collect()
+    }
+
+    fn random(input_size: usize, output_size: usize) -> Self {
+        let neurons = (0..output_size)
+            .map(|_| Neuron::random(input_size))
+            .collect();
+
+        Self { neurons }
     }
 }
 
@@ -44,7 +65,7 @@ impl Neuron {
     fn propagate(&self, inputs: &[f32]) -> f32 {
         assert_eq!(inputs.len(), self.output_weights.len());
 
-        // array[i] always perform a bounds check 
+        // array[i] always perform a bounds check
         let mut output = inputs // iterator is lazy
             .iter()
             .zip(&self.output_weights)
@@ -55,12 +76,24 @@ impl Neuron {
 
         output.max(0.0)
     }
-}
 
+    fn random(input_size: usize) -> Self {
+        let mut rng = rand::thread_rng();
+
+        let bias = rng.gen_range(-1.0..=1.0);
+
+        let weights = (0..input_size)
+            .map(|_| rng.gen_range(-1.0..=1.00))
+            .collect();
+
+        Self {
+            bias,
+            output_weights: weights,
+        }
+    }
+}
 
 // node value = activation_func(input val * weight + bias)
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}
