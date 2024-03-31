@@ -92,8 +92,3 @@ impl Neuron {
         }
     }
 }
-
-// node value = activation_func(input val * weight + bias)
-
-#[cfg(test)]
-mod tests {}
